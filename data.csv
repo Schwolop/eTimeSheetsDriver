@@ -1,0 +1,14 @@
+# Date (DD/MM/YY), Job Code, Activity Code, Hours, (Job Code, Activity Code, Hours), ...
+# Lines starting with #s or that are blank are ignored.
+#03/06/13, JC, ACTVTY, 3.0, JC2, EXMPL, 4.5
+#04/06/13, JC, ACTVTY, 3.0, JC, ACTVTY, 1.5, JC2, EXMPL, 3.0
+#05/06/13, JC, ACTVTY, 7.5
+#06/06/13, JC, ACTVTY, 7.5
+#07/06/13, JC, ACTVTY, 7.5
+
+10/06/13, JC, ACTVTY, 3.0, JC2, ACTVTY2, 1.5
+11/06/13, JC, ACTVTY, 1.5, JC, ACTVTY, 2.5, JC, ACTVTY, 1.5
+# Multiple of the same job+activity in one day are summed together.
+12/06/13, JC, ACTVTY, 7.5
+13/06/13, JC, ACTVTY, 7.5
+14/06/13, JC, ACTVTY, 7.5
