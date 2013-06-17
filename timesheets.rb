@@ -32,7 +32,7 @@ class ETimeSheetsAutoFill < Test::Unit::TestCase
     def test_autofill_timesheet
         # Database into which lines are read.
         # Format is eow->job%%%activity->date = [hours,comment]
-        db = Hash.new{|h,k| h[k]=Hash.new{|h,k| h[k]=Hash.new{|h,k| h[k]=[0,nil]}}}
+        db = Hash.new{|h,k| h[k]=Hash.new{|h,k| h[k]=Hash.new{|h,k| h[k]=[0,""]}}}
 
         # Perhaps not every time, but it might be worth scraping the page to 
         # find the codes ahead of time, and checking the input file conforms
@@ -69,7 +69,10 @@ class ETimeSheetsAutoFill < Test::Unit::TestCase
                     puts "#{date}, #{job}, #{activity}, #{hours}hrs, EOW: #{eow_date}#{comment and !comment.empty? ? ", #{comment}" : ""}"
                     db[eow_date][[job,activity].join('%%%')][date][0] += hours
                     if comment and !comment.empty?
-                        db[eow_date][[job,activity].join('%%%')][date][1] = comment
+                        unless db[eow_date][[job,activity].join('%%%')][date][1].empty? # Join additional comments on the same item/activity with a comma.
+                            db[eow_date][[job,activity].join('%%%')][date][1] += ", "
+                        end
+                        db[eow_date][[job,activity].join('%%%')][date][1] += comment
                     end
 
                     tupleCount+=1
