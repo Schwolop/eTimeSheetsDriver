@@ -14,4 +14,6 @@ You will need:
     * ETIMESHEETS_USER set to the user name (possibly full email address) of the user to automate.
     * ETIMESHEETS_PW set to the plain text password of the user to automate. Yes this is a bad practice. Tell eTimeSheets to support https or OAuth tokens. (Actually don't, because they'll break this script when they do...)
 
+See example-data.csv for the data file format.
+
 Please log support requests as github issues on this repository. Feel free to clone, patch, and pull request!
