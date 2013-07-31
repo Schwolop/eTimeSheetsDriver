@@ -16,23 +16,18 @@ class ETimeSheetsAutoFill < Test::Unit::TestCase
     def setup
         @debug = false; @require_user_input = true;
         @root_url = ENV['ETIMESHEETS_URL']
-        unless @debug
-            # Run the selenium server.
-            @selenium_pid = Process.spawn('java -jar selenium-server-standalone-2.33.0.jar')
-            @driver = Selenium::WebDriver.for :firefox
-        end
     end
 
     def teardown
-        unless @debug
-            Process.kill(9,@selenium_pid) # Kill selenium.
-        end
     end
 
     def test_autofill_timesheet
         # Database into which lines are read.
         # Format is eow->job%%%activity->date = [hours,comment]
         db = Hash.new{|h,k| h[k]=Hash.new{|h,k| h[k]=Hash.new{|h,k| h[k]=[0,""]}}}
+
+        # Mini-database that provides a sanity check of total hours for each date.
+        date_db = Hash.new{|h,k| h[k]=0}
 
         # Perhaps not every time, but it might be worth scraping the page to 
         # find the codes ahead of time, and checking the input file conforms
@@ -50,6 +45,7 @@ class ETimeSheetsAutoFill < Test::Unit::TestCase
                 while eow_date.sunday? == false
                     eow_date+=1 # increment until it becomes a sunday
                 end
+                assert eow_date - date < 7, "Error - next sunday from #{date} found seven or more days away. Check universe still functioning properly."
                 
                 commentCount = 0; tupleCount = 0; comment = nil
                 while true
@@ -57,6 +53,7 @@ class ETimeSheetsAutoFill < Test::Unit::TestCase
                     job = parts[c+1].strip # Job code
                     activity = parts[c+2].strip # Activity code
                     hours = parts[c+3].to_f # Hours
+                    assert hours != 0.0, "Parsing data found item with zero hours."
 
                     # Look for optional string in the fourth part
                     if parts.length > c+4 and (parts[c+4].strip)[0]=="\"" # If it's a comment...
@@ -68,6 +65,7 @@ class ETimeSheetsAutoFill < Test::Unit::TestCase
                     # Describe output and enter into DB.
                     puts "#{date}, #{job}, #{activity}, #{hours}hrs, EOW: #{eow_date}#{comment and !comment.empty? ? ", #{comment}" : ""}"
                     db[eow_date][[job,activity].join('%%%')][date][0] += hours
+                    date_db[date] += hours
                     if comment and !comment.empty?
                         unless db[eow_date][[job,activity].join('%%%')][date][1].empty? # Join additional comments on the same item/activity with a comma.
                             db[eow_date][[job,activity].join('%%%')][date][1] += ", "
@@ -84,11 +82,22 @@ class ETimeSheetsAutoFill < Test::Unit::TestCase
                 end
             end
         end
+
+        # Print sanity check of hours per date.
+        puts "\nHours per day:"
+        date_db.sort.each{|d,h| puts "#{d}: #{h} hrs"}
+
         print "[OK]\n"
 
         if @require_user_input and !@debug
             puts "Press enter to fill in timesheets (type anything else and hit enter to quit)"
             exit unless gets.length <= 1
+        end
+
+        unless @debug
+            # Run the selenium server.
+            @selenium_pid = Process.spawn('java -jar selenium-server-standalone-2.33.0.jar')
+            @driver = Selenium::WebDriver.for :firefox
         end
 
         unless @debug
@@ -190,17 +199,28 @@ class ETimeSheetsAutoFill < Test::Unit::TestCase
                 # Click 'Submit Timesheet'
                 element = driver.find_element(:xpath, "//html/body/etimesheets/designed/form/table/tbody/tr[3]/td/table/tbody/tr[10]/td/img")
                 element.click
+                puts "a"
+
+                assert driver.page_source.include?("Submit Timesheet"), "Failed to click 'Submit'."
 
                 # Wait until page loads appear
                 wait = Selenium::WebDriver::Wait.new(:timeout => 5) # seconds
+                puts "b"
                 wait.until {driver.find_element(:id => "Table9") }
+                puts "c"
 
                 # Click confirm
-                element = driver[:id => "Submit"]
+                element = driver.find_element(:xpath, '//*[@id="Submit"]')
+                puts "d"
                 element.submit
+                puts "e"
 
             end # each end_of_week
         end # unless @debug
+
+        unless @debug
+            Process.kill(9,@selenium_pid) # Kill selenium.
+        end
 
     end # end of test_autofill_timesheet
 
