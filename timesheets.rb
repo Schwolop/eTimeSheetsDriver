@@ -40,12 +40,13 @@ class ETimeSheetsAutoFill < Test::Unit::TestCase
                 parts = line.split(',')
                 date = Date::strptime(parts[0], "%d/%m/%y") # Parse as a date.
 
-                # Determine date of end of week (sunday) for this date.
+                # Determine date of end of week (sunday or last day of month) for this date.
                 eow_date = date
-                while eow_date.sunday? == false
-                    eow_date+=1 # increment until it becomes a sunday
+                last_day_of_month_for_date = Date.civil(eow_date.year,eow_date.month,-1) # The last day of the month in which 'date' lies
+                while eow_date.sunday? == false && eow_date != last_day_of_month_for_date
+                    eow_date+=1 # increment until it becomes a sunday or last day of month
                 end
-                assert eow_date - date < 7, "Error - next sunday from #{date} found seven or more days away. Check universe still functioning properly."
+                assert eow_date - date < 7, "Error - next end of week from #{date} found seven or more days away. Check universe still functioning properly."
                 
                 commentCount = 0; tupleCount = 0; comment = nil
                 while true
