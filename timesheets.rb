@@ -9,6 +9,7 @@ require "rubygems"
 gem "selenium-webdriver"
 require "selenium-webdriver"
 require 'date'
+require 'io/console'
 
 class ETimeSheetsAutoFill < Test::Unit::TestCase
     attr_reader :driver, :root_url
@@ -102,17 +103,29 @@ class ETimeSheetsAutoFill < Test::Unit::TestCase
         end
 
         unless @debug
-            # Login to eTimeSheets
-            assert !root_url.nil? && !root_url.empty?, "eTimeSheets root URL not found in ENV."
-            assert !ENV['ETIMESHEETS_USER'].nil? && !ENV['ETIMESHEETS_USER'].empty?, "eTimeSheets user not found in ENV."
-            assert !ENV['ETIMESHEETS_PW'].nil? && !ENV['ETIMESHEETS_PW'].empty?, "eTimeSheets password not found in ENV."
+            # Get ENV variables or input
+            username = ENV['ETIMESHEETS_USER']
+            password = ENV['ETIMESHEETS_PW']
+            if @root_url.nil? || @root_url.empty?
+                puts "eTimeSheets root URL not found in ENV. Using \"http://greentree.localnet:82/\" instead."
+                @root_url = 'http://greentree.localnet:82/'
+            end
+            if username.nil? || username.empty?
+                puts "Please enter your eTimeSheets email address (you can add this as the \"ETIMESHEETS_USER\" environment variable to skip this step in future): "
+                username = gets.chomp!
+            end
+            if password.nil? || password.empty?
+                puts "Please enter your eTimeSheets password (you can add this as the \"ETIMESHEETS_PW\" environment variable to skip this step in future): "
+                password = STDIN.noecho(&:gets).chomp! # Suppress password
+            end
 
+            # Login to eTimeSheets
             driver.navigate.to "#{@root_url}Login.asp"
             assert_equal "Greentree eTimeSheets", driver.title
             element = driver[:name => 'CoyOrg']
-            element.send_keys ENV['ETIMESHEETS_USER']
+            element.send_keys username
             element = driver[:name => 'Password']
-            element.send_keys ENV['ETIMESHEETS_PW']
+            element.send_keys password
             element.submit
 
             # Wait until page loads appear
@@ -192,29 +205,34 @@ class ETimeSheetsAutoFill < Test::Unit::TestCase
                     element.submit
                 end # each job/activity
 
-                if @require_user_input
-                    puts "Press enter to submit timesheets (type anything else and hit enter to quit)"
-                    exit unless gets.length <= 1
-                end
+                puts "Please manually click the submit button in the opened web browser to finish."
 
-                # Click 'Submit Timesheet'
-                element = driver.find_element(:xpath, "//html/body/etimesheets/designed/form/table/tbody/tr[3]/td/table/tbody/tr[10]/td/img")
-                element.click
-                puts "a"
+                # Commented out because I could never get the next section to work properly. There's
+                # some weird ajax magic going on with this button, and the webdriver doesn't seem to 
+                # be able to deal with it.                
+                # if @require_user_input
+                #     puts "Press enter to submit timesheets (type anything else and hit enter to quit)"
+                #     exit unless gets.length <= 1
+                # end
 
-                assert driver.page_source.include?("Submit Timesheet"), "Failed to click 'Submit'."
+                # # Click 'Submit Timesheet'
+                # element = driver.find_element(:xpath, "//html/body/etimesheets/designed/form/table/tbody/tr[3]/td/table/tbody/tr[10]/td/img")
+                # element.click
+                # puts "a"
 
-                # Wait until page loads appear
-                wait = Selenium::WebDriver::Wait.new(:timeout => 5) # seconds
-                puts "b"
-                wait.until {driver.find_element(:id => "Table9") }
-                puts "c"
+                # assert driver.page_source.include?("Submit Timesheet"), "Failed to click 'Submit'."
 
-                # Click confirm
-                element = driver.find_element(:xpath, '//*[@id="Submit"]')
-                puts "d"
-                element.submit
-                puts "e"
+                # # Wait until page loads appear
+                # wait = Selenium::WebDriver::Wait.new(:timeout => 5) # seconds
+                # puts "b"
+                # wait.until {driver.find_element(:id => "Table9") }
+                # puts "c"
+
+                # # Click confirm
+                # element = driver.find_element(:xpath, '//*[@id="Submit"]')
+                # puts "d"
+                # element.submit
+                # puts "e"
 
             end # each end_of_week
         end # unless @debug
