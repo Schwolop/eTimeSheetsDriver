@@ -107,8 +107,8 @@ class ETimeSheetsAutoFill < Test::Unit::TestCase
             username = ENV['ETIMESHEETS_USER']
             password = ENV['ETIMESHEETS_PW']
             if @root_url.nil? || @root_url.empty?
-                puts "eTimeSheets root URL not found in ENV. Using \"https://greentree.localnet:82/\" instead."
-                @root_url = 'https://greentree.localnet:82/'
+                puts "eTimeSheets root URL not found in ENV. Using \"https://greentree.localnet/\" instead."
+                @root_url = 'https://greentree.localnet/'
             end
             if username.nil? || username.empty?
                 puts "Please enter your eTimeSheets email address (you can add this as the \"ETIMESHEETS_USER\" environment variable to skip this step in future): "
